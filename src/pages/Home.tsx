@@ -2,13 +2,13 @@ import Konva from 'konva'
 import { Stage, Layer, Star, Image } from 'react-konva'
 import React, { useEffect, useState } from 'react'
 import useImage from 'use-image'
+import { Slider } from 'office-ui-fabric-react'
 
 interface IState {
-  currentX: number
-  currentY: number
   positionX: number
   positionY: number
-  draggable?: boolean
+  width: number
+  height: number
 }
 
 const LionImage = ({ ...props }) => {
@@ -17,10 +17,9 @@ const LionImage = ({ ...props }) => {
 }
 
 const Home = () => {
-  const [count, setCount] = useState(0)
   const [state, setstate] = useState<IState>({
-    currentX: 0,
-    currentY: 0,
+    width: 0,
+    height: 0,
     positionX: 0,
     positionY: 0
   })
@@ -57,6 +56,14 @@ const Home = () => {
   }
   return (
     <div>
+      <Slider
+        label='resize the logo'
+        showValue={false}
+        onChange={(value: number) => {
+          console.log(value)
+          setstate({ ...state, width: value })
+        }}
+      />
       <Stage width={window.innerWidth} height={window.innerHeight}>
         <Layer>
           <LionImage
@@ -69,9 +76,11 @@ const Home = () => {
           />
 
           <LionImage
-            style={{ width: 100, height: 100 }}
+            style={{ width: state.width * 10, height: state.height * 10 }}
             x={266}
             y={134}
+            width={100}
+            height={100}
             url='https://www.ries.com/wp-content/uploads/2017/12/Tesla-logo-2003-2500x2500-300x300.png'
             draggable
             shadowColor='black'
