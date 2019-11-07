@@ -1,97 +1,158 @@
-import Konva from 'konva'
-import { Stage, Layer, Star, Image } from 'react-konva'
-import React, { useEffect, useState } from 'react'
+import { Stage, Layer, Image as KonvaImage } from 'react-konva'
+import React, { useEffect, useState, useRef } from 'react'
 import useImage from 'use-image'
 import { Slider } from 'office-ui-fabric-react'
+import { Container } from 'react-bootstrap'
+import { DefaultButton, Stack } from 'office-ui-fabric-react'
 
 interface IState {
   positionX: number
   positionY: number
-  width: number
-  height: number
+  logoWidth: number
+  logoHeight: number
+  zoom: number
+  x: number
+  y: number
 }
 
-const LionImage = ({ ...props }) => {
+const initialState = {
+  logoWidth: 10,
+  logoHeight: 10,
+  positionX: 0,
+  positionY: 100,
+  zoom: 1,
+  x: 0,
+  y: 0
+}
+
+const UrlImage = ({ ...props }) => {
   const [image] = useImage(props.url)
-  return <Image {...props} image={image} />
+  return <KonvaImage {...props} image={image} />
 }
 
 const Home = () => {
-  const [state, setstate] = useState<IState>({
-    width: 0,
-    height: 0,
-    positionX: 0,
-    positionY: 0
-  })
-
-  // var pic_image = new Image()
-  let clienRect: ClientRect = {
-    bottom: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 0,
-    width: 0
-  }
+  const ctnr = useRef<HTMLDivElement>(null)
+  const [state, setstate] = useState<IState>({ ...initialState })
 
   const handleDragStart = (e: any) => {
     e.target.setAttrs({
       shadowOffset: {
         x: 15,
         y: 15
-      },
-      scaleX: 1.1,
-      scaleY: 1.1
+      }
     })
   }
+
+  const reset = () => {
+    debugger
+    //console.log(a)
+    console.log(state)
+    setstate({ ...state, x: 10, y: 10 })
+    console.log(state)
+  }
+
   const handleDragEnd = (e: any) => {
     e.target.to({
-      duration: 0.5,
-      easing: Konva.Easings.ElasticEaseOut,
-      scaleX: 1,
-      scaleY: 1,
+      duration: 0.2,
       shadowOffsetX: 5,
       shadowOffsetY: 5
     })
+
+    //console.log(a && a.current && a.current)
   }
+
+  useEffect(() => {
+    setstate({ ...state, zoom: state.zoom })
+  }, [])
+
+  const handleWheel = (e: any) => {
+    e.evt.preventDefault()
+    const stage = e.target.getStage()
+    const scaleBy = 1.3
+    const oldScale = stage.scaleX()
+
+    const newScale = e.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy
+
+    stage.scale({ x: newScale, y: newScale })
+
+    setstate({ ...state, zoom: newScale })
+  }
+
   return (
-    <div>
+    <Container style={{ width: '50vw', height: '50vw' }}>
       <Slider
         label='resize the logo'
         showValue={false}
+        min={5}
+        max={15}
+        value={state.logoWidth}
         onChange={(value: number) => {
-          console.log(value)
-          setstate({ ...state, width: value })
+          console.log('logowidth: ' + value)
+          setstate({ ...state, logoWidth: value, logoHeight: value })
         }}
       />
-      <Stage width={window.innerWidth} height={window.innerHeight}>
-        <Layer>
-          <LionImage
-            x={266}
-            y={134}
-            url='https://5.imimg.com/data5/GN/EY/MY-23225499/black-plain-t-shirt-500x500.jpg'
-            shadowColor='black'
-            shadowBlur={10}
-            shadowOpacity={0.6}
-          />
+      <Slider
+        label='zoom'
+        showValue={true}
+        min={1}
+        max={20}
+        value={state.zoom}
+        onChange={(value: number) => {
+          setstate({ ...state, zoom: value })
+        }}
+      />
 
-          <LionImage
-            style={{ width: state.width * 10, height: state.height * 10 }}
-            x={266}
-            y={134}
-            width={100}
-            height={100}
-            url='https://www.ries.com/wp-content/uploads/2017/12/Tesla-logo-2003-2500x2500-300x300.png'
-            draggable
-            shadowColor='black'
-            shadowBlur={10}
-            shadowOpacity={0.6}
+      <div
+        ref={ctnr}
+        style={{ width: '100%', height: '90%', border: '1px solid red' }}>
+        {ctnr && ctnr.current && (
+          <Stage
+            x={state.x}
+            y={state.y}
+            draggable={true}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-          />
-        </Layer>
-      </Stage>
-    </div>
+            onWheel={handleWheel}
+            scaleX={state.zoom}
+            scaleY={state.zoom}
+            onContentDblclick={() => {
+              debugger
+            }}
+            style={{
+              border: '1px solid green',
+              margin: '5px'
+            }}
+            width={ctnr.current.clientWidth * 0.98}
+            height={ctnr.current.clientHeight * 0.98}>
+            <Layer>
+              <UrlImage
+                url='https://5.imimg.com/data5/GN/EY/MY-23225499/black-plain-t-shirt-500x500.jpg'
+                shadowColor='black'
+                shadowBlur={10}
+                shadowOpacity={0.6}
+                width={ctnr.current.clientWidth * 0.98 * 0.95}
+                height={ctnr.current.clientWidth * 0.98 * 0.95}
+              />
+              <UrlImage
+                url='https://www.ries.com/wp-content/uploads/2017/12/Tesla-logo-2003-2500x2500-300x300.png'
+                draggable
+                shadowColor='black'
+                shadowBlur={10}
+                shadowOpacity={0.6}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                width={state.logoWidth * 10}
+                height={state.logoHeight * 10}
+              />
+            </Layer>
+          </Stage>
+        )}
+
+        <Stack horizontal>
+          <DefaultButton text='Reset' allowDisabledFocus onClick={reset} />
+        </Stack>
+      </div>
+    </Container>
   )
 }
 
